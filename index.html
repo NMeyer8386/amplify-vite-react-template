@@ -1,13 +1,58 @@
-<html>
-<head><title>Login</title></head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Callback</title>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      async function handleAuthRedirect() {
+        try {
+          const query = new URLSearchParams(window.location.search);
+          const code = query.get('code');
+
+          if (!code) {
+            console.error('No code found in URL.');
+            return;
+          }
+
+          console.log('Authorization code:', code);
+
+          // Send the code to your backend Lambda to exchange for token + get dashboard URL
+          const response = await fetch('https://yxa0p4y4uc.execute-api.ca-central-1.amazonaws.com/callback', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ code })
+          });
+
+          if (!response.ok) {
+            throw new Error(`Failed to get dashboard URL: ${response.statusText}`);
+          }
+
+          const data = await response.json();
+          const embedUrl = data.embed_url;
+
+          console.log('Received QuickSight embed URL:', embedUrl);
+
+          // Redirect user to the QuickSight dashboard
+          window.location.href = embedUrl;
+
+        } catch (error) {
+          console.error('Login failed:', error);
+          const messageDiv = document.getElementById('message');
+          if (messageDiv) {
+            messageDiv.innerText = 'Login failed. Please try again.';
+            messageDiv.style.color = 'red';
+          }
+        }
+      }
+
+      handleAuthRedirect();
+    });
+  </script>
+</head>
 <body>
-
-<!-- Step 1: Login button -->
-<a href="https://your-cognito-domain.auth.us-east-1.amazoncognito.com/login?response_type=token&client_id=YOUR_APP_CLIENT_ID&redirect_uri=https://yourapp.com/callback&scope=openid+email+profile">
-  <button>Login with Cognito</button>
-</a>
-
-<script type="module" src="/src/Callback.tsx"></script>
-
+  <div id="message">Logging you in...</div>
 </body>
 </html>
